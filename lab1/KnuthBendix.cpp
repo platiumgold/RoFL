@@ -1,12 +1,9 @@
 #include <iostream>
 #include <vector>
 #include <deque>
+#include "utils.h"
 using namespace std;
 
-struct Rule {
-    string lhs;
-    string rhs;
-};
 
 bool IsLess(const string& s1, const string& s2) {
     if (s1.length() == s2.length()) {
@@ -15,21 +12,7 @@ bool IsLess(const string& s1, const string& s2) {
     return s1.length() < s2.length();
 }
 
-string NormalForm(string t1, vector<Rule>& R) {
-    bool isNF = false;
-    while(!isNF) {
-        isNF = true;
-        for (const auto& rule : R) {
-            auto pos = t1.find(rule.lhs);
-            if (pos != string::npos) {
-                t1.replace(pos, rule.lhs.length(), rule.rhs);
-                isNF = false;
-                break;
-            }
-        }
-    }
-    return t1;
-}
+
 
 void FindCriticalPairsForTwoRules(const Rule& rule1, const Rule& rule2, deque<pair<string, string>>& critPairs) {
     const string& l1 = rule1.lhs;
@@ -110,7 +93,7 @@ std::vector<Rule> KnuthBendixCompletion(std::vector<Rule>& T) {
     }
     return R;
 }
-
+/*
 int main() {
     vector<Rule> initial_srs = {
             {"babab",     "aabab"},
@@ -131,3 +114,4 @@ int main() {
     }
     return 0;
 }
+ */
