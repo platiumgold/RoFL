@@ -2,10 +2,10 @@
 #include <vector>
 #include <string>
 #include <random>
-#include "utils.h"
 #include <cassert>
-using namespace std;
+#include "Knuth-Bendix.h"
 
+using namespace std;
 
 struct WordGenerationParams {
     int min_len;
@@ -17,12 +17,14 @@ struct ChainGenerationParams {
     int max_len;
 };
 
-pair<string, string> GenRandomTest(mt19937& gen, vector<Rule>& srs, WordGenerationParams& word_params,
-                                        ChainGenerationParams& chain_params) {
+
+
+inline pair<string, string> GenRandomTest(mt19937& gen, vector<Rule>& srs, WordGenerationParams& word_params,
+                                          ChainGenerationParams& chain_params) {
     //random word generation
     uniform_int_distribution<> word_len_distrib(word_params.min_len, word_params.max_len);
     int length = word_len_distrib(gen);
-    uniform_int_distribution<> char_distrib(0, word_params.alphabet.length()-1);
+    uniform_int_distribution<> char_distrib(0, static_cast<int>(word_params.alphabet.length()) - 1);
     string init_str {};
     for (int i = 0; i < length; ++i) {
         init_str += word_params.alphabet[char_distrib(gen)];
@@ -43,28 +45,28 @@ pair<string, string> GenRandomTest(mt19937& gen, vector<Rule>& srs, WordGenerati
         if (possible_rules.empty()) {
             break;
         }
-        uniform_int_distribution<> rule_distrib(0, possible_rules.size() - 1);
+        uniform_int_distribution<> rule_distrib(0, static_cast<int>(possible_rules.size()) - 1);
         int rule_index = possible_rules[rule_distrib(gen)];
-        
+
         //position selection
-        vector<int> positions {};
-        int pos = new_str.find(srs[rule_index].lhs);
+        vector<size_t> positions {};
+        size_t pos = new_str.find(srs[rule_index].lhs);
         while(pos != string::npos) {
             positions.push_back(pos);
             pos = new_str.find(srs[rule_index].lhs, pos + 1);
         }
-        int position {};
+        size_t position;
         if (positions.size() == 1) {
             position = positions[0];
         } else {
-            uniform_int_distribution<> pos_distrib(0, positions.size() - 1);
+            uniform_int_distribution<> pos_distrib(0, static_cast<int>(positions.size()) - 1);
             position = positions[pos_distrib(gen)];
         }
 
         //completing the step
         Rule rule = srs[rule_index];
         new_str.replace(position, rule.lhs.length(), rule.rhs);
-        cout << srs[rule_index].lhs << "->" << srs[rule_index].rhs << " " << new_str << std::endl;
+        //cout << srs[rule_index].lhs << "->" << srs[rule_index].rhs << " " << new_str << endl;
     }
 
     return {init_str, new_str};
@@ -80,7 +82,6 @@ bool FuzzTest(mt19937& gen, vector<Rule>& init_srs, vector<Rule>& new_srs,
     } else {
         return false;
     }
-
 }
 
 int main() {
@@ -96,25 +97,37 @@ int main() {
             {"aabaababb", "bbb"},
             {"baababbaa", "bbabbabba"}
     };
-    std::vector<Rule> new_srs = {
-            {"bbb",   "bb"},
-            {"baba",  "bb"},
-            {"bba",   "bb"},
-            {"abb",   "bb"},
-            {"baa",   "bb"},
-            {"aabab", "bb"}
+    vector<Rule> terminating_srs = {
+            {"babab",     "aabab"},
+            {"bbbab",     "bbaab"},
+            {"bbb",       "bb"},
+            {"abaaab",    "baba"},
+            {"ababbab",   "ababaab"},
+            {"baab",      "baa"},
+            {"bbabbaa",   "bbaaa"},
+            {"aabbabba",  "bbaa"},
+            {"aabaababb", "bbb"},
+            {"bbabbabba", "baababbaa"},
     };
+    vector<Rule> new_srs = KnuthBendixCompletion(terminating_srs);
+    cout << "Final rules:" << endl;
+    for (const auto& rule : new_srs) {
+        cout << rule.lhs << " -> " << rule.rhs << endl;
+    }
 
     random_device rd;
-    int seed = rd();
+    auto seed = rd();
     cout << "Seed: " << seed << std::endl;
     mt19937 gen(seed);
 
     WordGenerationParams wgp{5, 5000, "ab"};
     ChainGenerationParams cgp{2,70};
-    for (int i=0; i<100; ++i) {
+    cout << "fuzzing" << endl;
+    for (int i=0; i<10000; ++i) {
         assert(FuzzTest(gen, initial_srs, new_srs, wgp, cgp));
+        cout << i << " OK" << endl;
     }
-    cout << "cool" << std::endl;
+
+    cout << "cool" << endl;
     return 0;
 }

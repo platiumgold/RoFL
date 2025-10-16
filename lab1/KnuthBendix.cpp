@@ -1,7 +1,7 @@
+#include "Knuth-Bendix.h"
 #include <iostream>
 #include <vector>
 #include <deque>
-#include "utils.h"
 using namespace std;
 
 
@@ -12,7 +12,21 @@ bool IsLess(const string& s1, const string& s2) {
     return s1.length() < s2.length();
 }
 
-
+string NormalForm(string t1, vector<Rule>& R) {
+    bool isNF = false;
+    while(!isNF) {
+        isNF = true;
+        for (const auto& rule : R) {
+            auto pos = t1.find(rule.lhs);
+            if (pos != string::npos) {
+                t1.replace(pos, rule.lhs.length(), rule.rhs);
+                isNF = false;
+                break;
+            }
+        }
+    }
+    return t1;
+}
 
 void FindCriticalPairsForTwoRules(const Rule& rule1, const Rule& rule2, deque<pair<string, string>>& critPairs) {
     const string& l1 = rule1.lhs;
@@ -79,7 +93,7 @@ std::vector<Rule> KnuthBendixCompletion(std::vector<Rule>& T) {
                 new_rule = {s2nf, s1nf};
             }
 
-            cout << "New rule: " << new_rule.lhs << " -> " << new_rule.rhs << endl;
+            //cout << "New rule: " << new_rule.lhs << " -> " << new_rule.rhs << endl;
 
             Interreduce(new_rule, R, P);
             const Rule& final_new_rule = R.back();
@@ -93,25 +107,3 @@ std::vector<Rule> KnuthBendixCompletion(std::vector<Rule>& T) {
     }
     return R;
 }
-/*
-int main() {
-    vector<Rule> initial_srs = {
-            {"babab",     "aabab"},
-            {"bbbab",     "bbaab"},
-            {"bbb",       "bb"},
-            {"abaaab",    "baba"},
-            {"ababbab",   "ababaab"},
-            {"baab",      "baa"},
-            {"bbabbaa",   "bbaaa"},
-            {"aabbabba",  "bbaa"},
-            {"aabaababb", "bbb"},
-            {"bbabbabba", "baababbaa"},
-    };
-    auto res = KnuthBendixCompletion(initial_srs);
-    cout << "Final rules:" << endl;
-    for (const auto& rule : res) {
-        cout << rule.lhs << " -> " << rule.rhs << endl;
-    }
-    return 0;
-}
- */
