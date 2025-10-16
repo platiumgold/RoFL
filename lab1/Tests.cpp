@@ -84,6 +84,22 @@ bool FuzzTest(mt19937& gen, vector<Rule>& init_srs, vector<Rule>& new_srs,
     }
 }
 
+bool MetaTest(mt19937& gen, vector<Rule>& new_srs,
+              WordGenerationParams& word_params, ChainGenerationParams& chain_params) {
+    auto [init_str, new_str] = GenRandomTest(gen, new_srs, word_params, chain_params);
+    if (init_str.find('b') != string::npos && new_str.find('b') != string::npos) {
+        return true;
+    } else if (init_str.find('b') == string::npos && new_str.find('b') == string::npos) {
+        if (init_str.size() == new_str.size()) {
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+
 int main() {
     vector<Rule> initial_srs = {
             {"babab",     "aabab"},
@@ -128,6 +144,11 @@ int main() {
         cout << i << " OK" << endl;
     }
 
+    cout << "meta" << endl;
+    for(int i=0; i<10000; ++i) {
+        assert(MetaTest(gen, new_srs, wgp, cgp));
+        cout << i << " OK" << endl;
+    }
     cout << "cool" << endl;
     return 0;
 }
