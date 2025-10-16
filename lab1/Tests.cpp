@@ -19,7 +19,7 @@ struct ChainGenerationParams {
 
 
 
-inline pair<string, string> GenRandomTest(mt19937& gen, vector<Rule>& srs, WordGenerationParams& word_params,
+pair<string, string> GenRandomTest(mt19937& gen, vector<Rule>& srs, WordGenerationParams& word_params,
                                           ChainGenerationParams& chain_params) {
     //random word generation
     uniform_int_distribution<> word_len_distrib(word_params.min_len, word_params.max_len);
@@ -66,7 +66,6 @@ inline pair<string, string> GenRandomTest(mt19937& gen, vector<Rule>& srs, WordG
         //completing the step
         Rule rule = srs[rule_index];
         new_str.replace(position, rule.lhs.length(), rule.rhs);
-        //cout << srs[rule_index].lhs << "->" << srs[rule_index].rhs << " " << new_str << endl;
     }
 
     return {init_str, new_str};
@@ -84,20 +83,48 @@ bool FuzzTest(mt19937& gen, vector<Rule>& init_srs, vector<Rule>& new_srs,
     }
 }
 
-bool MetaTest(mt19937& gen, vector<Rule>& new_srs,
+
+
+int count_ba_ab_len(string str) {
+    int res {0};
+    size_t pos = str.find("ba");
+    while(pos != string::npos) {
+        ++res;
+        pos = str.find("ba", pos + 1);
+    }
+    pos = str.find("ab");
+    while(pos != string::npos) {
+        ++res;
+        pos = str.find("ab", pos + 1);
+    }
+    res += str.size();
+    return res;
+}
+
+bool MetaTest(mt19937& gen, vector<Rule>& srs,
               WordGenerationParams& word_params, ChainGenerationParams& chain_params) {
-    auto [init_str, new_str] = GenRandomTest(gen, new_srs, word_params, chain_params);
-    if (init_str.find('b') != string::npos && new_str.find('b') != string::npos) {
-        return true;
-    } else if (init_str.find('b') == string::npos && new_str.find('b') == string::npos) {
-        if (init_str.size() == new_str.size()) {
-            return true;
-        } else {
-            return false;
-        }
-    } else {
+    auto [init_str, new_str] = GenRandomTest(gen, srs, word_params, chain_params);
+    //1
+    if (init_str.find('b') == string::npos ^ new_str.find('b') == string::npos) {
         return false;
     }
+    //2
+    if (init_str.find('b') == string::npos && new_str.find('b') == string::npos) {
+        if (init_str.size() != new_str.size()) {
+            return false;
+        }
+    }
+    //3
+    if (count_ba_ab_len(init_str) < count_ba_ab_len(new_str)) {
+        return false;
+    }
+    //4
+    if (init_str.size() < new_str.size()) {
+        return false;
+    }
+
+
+    return true;
 }
 
 int main() {
@@ -146,6 +173,7 @@ int main() {
 
     cout << "meta" << endl;
     for(int i=0; i<10000; ++i) {
+        assert(MetaTest(gen, initial_srs, wgp, cgp));
         assert(MetaTest(gen, new_srs, wgp, cgp));
         cout << i << " OK" << endl;
     }
