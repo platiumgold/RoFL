@@ -2,7 +2,9 @@
 #include <stack>
 #include <vector>
 #include <unordered_map>
+#include <map>
 #include <unordered_set>
+#include <set>
 #include <iostream>
 std::string RegexToPolish(const std::string& regex) {
     std::stack<char> ops{};
@@ -38,12 +40,13 @@ std::string RegexToPolish(const std::string& regex) {
     return polish;
 }
 
-using TransitionMap = std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_set<std::string>>>;
+using NFATransitionMap = std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_set<std::string>>>;
+using DFATransitionMap = std::unordered_map<std::string, std::unordered_map<std::string, std::string>>;
 
 class NFA {
 public:
     std::unordered_set<std::string> states {};
-    TransitionMap transitions {};
+    NFATransitionMap transitions {};
     std::string start_state{};
     std::string end_state{};
 
@@ -54,14 +57,16 @@ public:
         states.insert(end);
         add_transition(start, trans, end);
     }
+
     void add_state(const std::string& state) {
         states.insert(state);
     }
+
     void add_transition(const std::string& from, const std::string& trans, const std::string& to) {
         transitions[from][trans].insert(to);
     }
 
-    void merge_transitions(const TransitionMap& other_transitions) {
+    void merge_transitions(const NFATransitionMap& other_transitions) {
         for (const auto& from_pair : other_transitions) {
             for (const auto& symbol_pair : from_pair.second) {
                 for (const auto& to : symbol_pair.second) {
@@ -71,8 +76,7 @@ public:
         }
     }
 
-    void Union(NFA nfa2, const std::string& new_start, const std::string& new_end) {
-
+    void Union(const NFA& nfa2, const std::string& new_start, const std::string& new_end) {
         states.insert(new_start);
         states.insert(new_end);
         states.insert(nfa2.states.begin(), nfa2.states.end());
@@ -87,7 +91,7 @@ public:
         end_state = new_end;
     }
 
-    void Concat(NFA nfa2) {
+    void Concat(const NFA& nfa2) {
         states.insert(nfa2.states.begin(), nfa2.states.end());
         merge_transitions(nfa2.transitions);
 
@@ -176,6 +180,136 @@ NFA PolishToThompson(const std::string& tokens) {
     return Thompson;
 }
 
+class DFA {
+public:
+    std::unordered_set<std::string> states {};
+    DFATransitionMap transitions {};
+    std::string start_state{};
+    std::unordered_set<std::string> end_states{};
+
+    DFA() = default;
+
+    void add_state(const std::string& state, bool is_final = false, bool is_start = false) {
+        states.insert(state);
+        if (is_final) {
+            end_states.insert(state);
+        }
+        if (is_start) {
+            start_state = state;
+        }
+    }
+
+    void add_transition(const std::string& from, const std::string& symbol, const std::string& to) {
+        transitions[from][symbol] = to;
+    }
+
+    std::string ToDot() {
+        std::string result {"digraph DFA {\n"
+                            "  rankdir=LR;\n"
+                            "  node [shape = circle];\n"};
+        for (const auto& state : states) {
+            if (end_states.find(state) != end_states.end()) {
+                result += "  " + state + "[shape=doublecircle];\n";
+            } else {
+                result += "  " + state + ";\n";
+            }
+        }
+        for (const auto& from_pair : transitions) {
+            const std::string &from = from_pair.first;
+            for (const auto &symbol_pair: from_pair.second) {
+                const std::string &symbol = symbol_pair.first;
+                const std::string &to = symbol_pair.second;
+                result += "  " + from + "->" + to + "[label=" + symbol + "];\n";
+            }
+        }
+        return result + "}";
+    }
+};
+
+std::set<std::string> epsilon_closure(const NFA& nfa, const std::set<std::string>& states) {
+    std::set<std::string> closure = states;
+    std::stack<std::string> stack{};
+    for (const auto& state : states) {
+        stack.push(state);
+    }
+
+    while(!stack.empty()) {
+        std::string state = stack.top();
+        stack.pop();
+
+        auto it_from = nfa.transitions.find(state);
+        if(it_from == nfa.transitions.end()) {
+            continue;
+        }
+        auto it_symbol = it_from->second.find("e");
+        if(it_symbol == it_from->second.end()) {
+            continue;
+        }
+        for (const auto& to : it_symbol->second) {
+            if (closure.find(to) == closure.end()) {
+                closure.insert(to);
+                stack.push(to);
+            }
+        }
+
+    }
+    return closure;
+}
+
+std::set<std::string> move(NFA& nfa, std::set<std::string>& states, std::string symbol) {
+    std::set<std::string> achievable;
+    for (const auto& state : states) {
+        if (nfa.transitions.count(state) && nfa.transitions.at(state).count(symbol)) {
+            for(const auto& achieve_state : nfa.transitions.at(state).at(symbol)) {
+                achievable.insert(achieve_state);
+            }
+        }
+    }
+    return achievable;
+}
+
+DFA NFAtoDFA(NFA& nfa) {
+    std::map<std::set<std::string>, std::string> set_to_name{};
+    int state_counter{0};
+    std::stack<std::set<std::string>> stack{};
+    DFA dfa{};
+
+    auto start_closure = epsilon_closure(nfa, {nfa.start_state});
+    set_to_name[start_closure] = std::to_string(state_counter++);
+
+    bool is_final{false};
+    if (start_closure.find(nfa.end_state) != start_closure.end()) {
+        is_final = true;
+    }
+
+    dfa.add_state(set_to_name[start_closure], is_final, true);
+    stack.push(start_closure);
+
+    while(!stack.empty()) {
+        auto state = stack.top();
+        stack.pop();
+        for (auto ch : "abc") {
+            std::string sch(1, ch);
+            auto move_set = move(nfa, state, sch);
+            if (move_set.empty()) {
+                continue;
+            }
+            auto eps_closure = epsilon_closure(nfa, move_set);
+            if (!set_to_name.count(eps_closure)) {
+                set_to_name[eps_closure] = std::to_string(state_counter++);
+                bool is_final{false};
+                if (eps_closure.count(nfa.end_state)) {
+                    is_final = true;
+                }
+                dfa.add_state(set_to_name[eps_closure], is_final);
+                stack.push(eps_closure);
+            }
+            dfa.add_transition(set_to_name[state], sch, set_to_name[eps_closure]);
+        }
+    }
+    return dfa;
+}
+
 int main() {
     /*
     ((a*.b*.c*)*.a.b.(a*.b*.c*)*.b.c.(a|b|c)*)|((a|b|c)*.b.c.(a*.b*.c*)*.a.b.(a|b.c|c.c|b.b)*)|a.b.c
@@ -188,5 +322,11 @@ int main() {
     NFA Thompson = PolishToThompson(polish);
     std::cout << Thompson.ToDot() << std::endl;
 
+    auto closure = epsilon_closure(Thompson, {Thompson.start_state});
+    for (auto& i : closure) {
+        //std::cout << i << " ";
+    }
+    DFA dfa = NFAtoDFA(Thompson);
+    std::cout << dfa.ToDot() << std::endl;
     return 0;
 }
