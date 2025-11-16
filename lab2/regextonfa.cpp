@@ -38,10 +38,12 @@ std::string RegexToPolish(const std::string& regex) {
     return polish;
 }
 
+using TransitionMap = std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_set<std::string>>>;
+
 class NFA {
 public:
     std::unordered_set<std::string> states {};
-    std::vector<std::tuple<std::string, std::string, std::string>> transitions {};
+    TransitionMap transitions {};
     std::string start_state{};
     std::string end_state{};
 
@@ -50,13 +52,23 @@ public:
     NFA(const std::string& start, const std::string& trans, const std::string& end) : start_state(start), end_state(end) {
         states.insert(start);
         states.insert(end);
-        transitions.emplace_back(start, trans, end);
+        add_transition(start, trans, end);
     }
     void add_state(const std::string& state) {
         states.insert(state);
     }
     void add_transition(const std::string& from, const std::string& trans, const std::string& to) {
-        transitions.emplace_back(from, trans, to);
+        transitions[from][trans].insert(to);
+    }
+
+    void merge_transitions(const TransitionMap& other_transitions) {
+        for (const auto& from_pair : other_transitions) {
+            for (const auto& symbol_pair : from_pair.second) {
+                for (const auto& to : symbol_pair.second) {
+                    add_transition(from_pair.first, symbol_pair.first, to);
+                }
+            }
+        }
     }
 
     void Union(NFA nfa2, const std::string& new_start, const std::string& new_end) {
@@ -64,12 +76,12 @@ public:
         states.insert(new_start);
         states.insert(new_end);
         states.insert(nfa2.states.begin(), nfa2.states.end());
-        transitions.insert(transitions.end(), nfa2.transitions.begin(), nfa2.transitions.end());
+        merge_transitions(nfa2.transitions);
 
-        transitions.emplace_back(new_start, "e", nfa2.start_state);
-        transitions.emplace_back(new_start, "e", start_state);
-        transitions.emplace_back(nfa2.end_state, "e", new_end);
-        transitions.emplace_back(end_state, "e", new_end);
+        add_transition(new_start, "e", nfa2.start_state);
+        add_transition(new_start, "e", start_state);
+        add_transition(nfa2.end_state, "e", new_end);
+        add_transition(end_state, "e", new_end);
 
         start_state = new_start;
         end_state = new_end;
@@ -77,10 +89,9 @@ public:
 
     void Concat(NFA nfa2) {
         states.insert(nfa2.states.begin(), nfa2.states.end());
-        transitions.insert(transitions.end(), nfa2.transitions.begin(), nfa2.transitions.end());
+        merge_transitions(nfa2.transitions);
 
-
-        transitions.emplace_back(end_state, "e", nfa2.start_state);
+        add_transition(end_state, "e", nfa2.start_state);
         end_state = nfa2.end_state;
     }
 
@@ -88,10 +99,10 @@ public:
         states.insert(new_start);
         states.insert(new_end);
 
-        transitions.emplace_back(new_start, "e", new_end);
-        transitions.emplace_back(new_start, "e", start_state);
-        transitions.emplace_back(end_state, "e", start_state);
-        transitions.emplace_back(end_state, "e", new_end);
+        add_transition(new_start, "e", new_end);
+        add_transition(new_start, "e", start_state);
+        add_transition(end_state, "e", start_state);
+        add_transition(end_state, "e", new_end);
 
         start_state = new_start;
         end_state = new_end;
@@ -108,9 +119,16 @@ public:
                 result += "  " + state + ";\n";
             }
         }
-        for (auto trans : transitions) {
-            result += "  " + std::get<0>(trans) + "->" + std::get<2>(trans) + "[label=" + std::get<1>(trans) + "];\n";
+        for (const auto& from_pair : transitions) {
+            const std::string &from = from_pair.first;
+            for (const auto &symbol_pair: from_pair.second) {
+                const std::string &symbol = symbol_pair.first;
+                for (const auto &to: symbol_pair.second) {
+                    result += "  " + from + "->" + to + "[label=" + symbol + "];\n";
+                }
+            }
         }
+
         return result + "}";
     }
 };
