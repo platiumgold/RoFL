@@ -6,6 +6,10 @@
 #include <unordered_set>
 #include <set>
 #include <iostream>
+#include <fstream>
+#include <numeric>
+#include <iomanip>
+
 std::string RegexToPolish(const std::string& regex) {
     std::stack<char> ops{};
     std::string polish {};
@@ -310,6 +314,133 @@ DFA NFAtoDFA(NFA& nfa) {
     return dfa;
 }
 
+class DSU {
+private:
+    std::vector<int> parent;
+public:
+    DSU(int n) {
+        parent.resize(n);
+        std::iota(parent.begin(), parent.end(), 0);
+    }
+
+    int find(int i) {
+        if (parent[i] == i) {
+            return i;
+        }
+        return parent[i] = find(parent[i]);
+    }
+
+    void unite(int i, int j) {
+        int root_i = find(i);
+        int root_j = find(j);
+        if (root_i != root_j) {
+            parent[root_i] = root_j;
+        }
+    }
+};
+
+void save_table(const std::string& filename, const std::vector<std::vector<int>>& table) {
+    std::ofstream file(filename);
+
+    int n = table.size();
+
+    int col_width = std::to_string(n - 1).length() + 1;
+
+    file << std::setw(col_width) << " " << "|";
+    for (int j = 0; j < n - 1; ++j) {
+        file << std::setw(col_width) << j;
+    }
+    file << std::endl;
+
+    file << std::setw(col_width) << std::setfill('-') << "" << "+";
+    for (int j = 0; j < n - 1; ++j) {
+        file << std::setw(col_width) << "";
+    }
+    file << std::setfill(' ') << std::endl;
+
+    for (int i = 1; i < n; ++i) {
+        file << std::setw(col_width) << i << "|";
+        for (int j = 0; j < i; ++j) {
+            char symbol = (table[i][j] == 1) ? 'X' : '.';
+            file << std::setw(col_width) << symbol;
+        }
+        file << std::endl;
+    }
+}
+
+DFA minimize_DFA(DFA& dfa) {
+    int n = dfa.states.size();
+    std::vector<std::vector<int>> table(n, std::vector<int>(n, 0));
+    for(int i=0; i<n; ++i) {
+        for(int j=0; j<i; ++j) {
+            if (dfa.end_states.count(std::to_string(i)) != dfa.end_states.count(std::to_string(j))) {
+                table[i][j] = 1;
+            }
+        }
+    }
+
+    bool is_min{false};
+    while(!is_min) {
+        is_min = true;
+        for(int i=0; i<n; ++i) {
+            for(int j=0; j<i; ++j) {
+                if (table[i][j] == 1) {
+                    continue;
+                }
+                for (auto ch : "abc") {
+                    std::string sch(1, ch);
+
+                    auto it_i = dfa.transitions.find(std::to_string(i));
+                    if (it_i == dfa.transitions.end() || it_i->second.find(sch) == it_i->second.end()) {
+                        continue;
+                    }
+                    std::string qi_ = dfa.transitions[std::to_string(i)][sch];
+                    std::string qj_ = dfa.transitions[std::to_string(j)][sch];
+
+                    int mi = std::min(std::stoi(qi_), std::stoi(qj_));
+                    int ma = std::max(std::stoi(qi_), std::stoi(qj_));
+                    if (table[ma][mi]) {
+                        table[i][j] = 1;
+                        is_min = false;
+                    }
+                }
+            }
+        }
+    }
+
+    save_table("min_table.txt", table);
+
+    DFA min_dfa{};
+    DSU dsu(n);
+    for(int i=0; i<n; ++i) {
+        for (int j = 0; j < i; ++j) {
+            if (!table[i][j]) {
+                dsu.unite(i, j);
+            }
+        }
+    }
+
+    min_dfa.start_state = std::to_string(dsu.find(std::stoi(dfa.start_state)));
+    for (const auto& state : dfa.states) {
+        bool is_final{false};
+        if (dfa.end_states.count(state)) {
+            is_final = true;
+        }
+        std::string new_state = std::to_string(dsu.find(std::stoi(state)));
+        min_dfa.add_state(new_state, is_final);
+    }
+
+    for (const auto& from_pair : dfa.transitions) {
+        std::string from = std::to_string(dsu.find(std::stoi(from_pair.first)));
+        for (const auto& symbol_pair : from_pair.second) {
+            std::string symbol = symbol_pair.first;
+            std::string to = std::to_string(dsu.find(std::stoi(symbol_pair.second)));
+            min_dfa.add_transition(from, symbol, to);
+        }
+    }
+    return min_dfa;
+}
+
 int main() {
     /*
     ((a*.b*.c*)*.a.b.(a*.b*.c*)*.b.c.(a|b|c)*)|((a|b|c)*.b.c.(a*.b*.c*)*.a.b.(a|b.c|c.c|b.b)*)|a.b.c
@@ -328,5 +459,7 @@ int main() {
     }
     DFA dfa = NFAtoDFA(Thompson);
     std::cout << dfa.ToDot() << std::endl;
+    DFA min_dfa = minimize_DFA(dfa);
+    std::cout << min_dfa.ToDot() << std::endl;
     return 0;
 }
