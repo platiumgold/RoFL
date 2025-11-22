@@ -40,5 +40,21 @@ inline std::string RegexToPolish(const std::string& regex) {
     return polish;
 }
 
+inline std::string preprocess_regex(const std::string& regex) {
+    std::string res = "";
+    if (regex.empty()) return res;
 
+    for (size_t i = 0; i < regex.length(); ++i) {
+        res += regex[i];
+        if (i + 1 < regex.length()) {
+            char current = regex[i];
+            char next = regex[i+1];
+            if ((isalpha(current) || current == '*' || current == ')') &&
+                (isalpha(next) || next == '(')) {
+                res += '.';
+            }
+        }
+    }
+    return res;
+}
 #endif //ROFL_PARSING_H
