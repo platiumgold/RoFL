@@ -7,7 +7,7 @@
 #include "DFA.h"
 
 
-void DFA::add_state(const std::string& state, bool is_final, bool is_start) {
+void DFA::AddState(const std::string& state, bool is_final, bool is_start) {
     states.insert(state);
     if (is_final) {
         end_states.insert(state);
@@ -17,7 +17,7 @@ void DFA::add_state(const std::string& state, bool is_final, bool is_start) {
     }
 }
 
-void DFA::add_transition(const std::string& from, const std::string& symbol, const std::string& to) {
+void DFA::AddTransition(const std::string& from, const std::string& symbol, const std::string& to) {
     transitions[from][symbol] = to;
 }
 
@@ -49,37 +49,38 @@ DFA NFAtoDFA(NFA& nfa) {
     std::stack<std::set<std::string>> stack{};
     DFA dfa{};
 
-    auto start_closure = epsilon_closure(nfa, {nfa.start_state});
+    auto start_closure = EpsilonClosure(nfa, {nfa.start_state});
     set_to_name[start_closure] = std::to_string(state_counter++);
 
-    bool is_final{false};
-    if (start_closure.find(nfa.end_state) != start_closure.end()) {
-        is_final = true;
-    }
+    bool is_final = std::any_of(start_closure.begin(), start_closure.end(),
+                                [&nfa](const std::string& s) {
+                                    return nfa.end_states.count(s);
+                                });
 
-    dfa.add_state(set_to_name[start_closure], is_final, true);
+
+    dfa.AddState(set_to_name[start_closure], is_final, true);
     stack.push(start_closure);
 
     while(!stack.empty()) {
         auto state = stack.top();
         stack.pop();
-        for (auto ch : "abc") {
+        for (auto ch : {'a', 'b', 'c'}) {
             std::string sch(1, ch);
-            auto move_set = move(nfa, state, sch);
+            auto move_set = Move(nfa, state, sch);
             if (move_set.empty()) {
                 continue;
             }
-            auto eps_closure = epsilon_closure(nfa, move_set);
+            auto eps_closure = EpsilonClosure(nfa, move_set);
             if (!set_to_name.count(eps_closure)) {
                 set_to_name[eps_closure] = std::to_string(state_counter++);
-                bool is_final{false};
-                if (eps_closure.count(nfa.end_state)) {
-                    is_final = true;
-                }
-                dfa.add_state(set_to_name[eps_closure], is_final);
+                bool is_final = std::any_of(eps_closure.begin(), eps_closure.end(),
+                                                    [&nfa](const std::string& s) {
+                                                        return nfa.end_states.count(s);
+                                                    });
+                dfa.AddState(set_to_name[eps_closure], is_final);
                 stack.push(eps_closure);
             }
-            dfa.add_transition(set_to_name[state], sch, set_to_name[eps_closure]);
+            dfa.AddTransition(set_to_name[state], sch, set_to_name[eps_closure]);
         }
     }
     return dfa;
@@ -110,7 +111,7 @@ public:
     }
 };
 
-DFA minimize_DFA(DFA& dfa) {
+DFA MinimizeDFA(DFA& dfa) {
     int n = dfa.states.size();
     std::vector<std::vector<int>> table(n, std::vector<int>(n, 0));
     for(int i=0; i<n; ++i) {
@@ -129,7 +130,7 @@ DFA minimize_DFA(DFA& dfa) {
                 if (table[i][j] == 1) {
                     continue;
                 }
-                for (auto ch : "abc") {
+                for (auto ch : {'a', 'b', 'c'}) {
                     std::string sch(1, ch);
 
                     auto it_i = dfa.transitions.find(std::to_string(i));
@@ -167,7 +168,7 @@ DFA minimize_DFA(DFA& dfa) {
             is_final = true;
         }
         std::string new_state = std::to_string(dsu.find(std::stoi(state)));
-        min_dfa.add_state(new_state, is_final);
+        min_dfa.AddState(new_state, is_final);
     }
 
     for (const auto& from_pair : dfa.transitions) {
@@ -175,8 +176,24 @@ DFA minimize_DFA(DFA& dfa) {
         for (const auto& symbol_pair : from_pair.second) {
             std::string symbol = symbol_pair.first;
             std::string to = std::to_string(dsu.find(std::stoi(symbol_pair.second)));
-            min_dfa.add_transition(from, symbol, to);
+            min_dfa.AddTransition(from, symbol, to);
         }
     }
     return min_dfa;
+}
+
+bool DFA::IsInLanguage(const std::string &word) {
+    std::string curr_state {start_state};
+    for (char ch : word) {
+        std::string sch(1, ch);
+        if (transitions.count(curr_state) && transitions[curr_state].count(sch)) {
+            curr_state = transitions[curr_state][sch];
+        } else {
+            return false;
+        }
+    }
+    if (end_states.count(curr_state)) {
+        return true;
+    }
+    return false;
 }

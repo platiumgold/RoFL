@@ -2,26 +2,27 @@
 #include <vector>
 #include <stack>
 #include <cctype>
+#include <algorithm>
 
-NFA::NFA(const std::string& start, const std::string& trans, const std::string& end) : start_state(start), end_state(end) {
+NFA::NFA(const std::string& start, const std::string& trans, const std::string& end) : start_state(start), end_states({end}) {
     states.insert(start);
     states.insert(end);
-    add_transition(start, trans, end);
+    AddTransition(start, trans, end);
 }
 
-void NFA::add_state(const std::string& state) {
+void NFA::AddState(const std::string& state) {
     states.insert(state);
 }
 
-void NFA::add_transition(const std::string& from, const std::string& trans, const std::string& to) {
+void NFA::AddTransition(const std::string& from, const std::string& trans, const std::string& to) {
     transitions[from][trans].insert(to);
 }
 
-void NFA::merge_transitions(const NFATransitionMap& other_transitions) {
+void NFA::MergeTransitions(const NFATransitionMap& other_transitions) {
     for (const auto& from_pair : other_transitions) {
         for (const auto& symbol_pair : from_pair.second) {
             for (const auto& to : symbol_pair.second) {
-                add_transition(from_pair.first, symbol_pair.first, to);
+                AddTransition(from_pair.first, symbol_pair.first, to);
             }
         }
     }
@@ -31,36 +32,36 @@ void NFA::Union(const NFA& nfa2, const std::string& new_start, const std::string
     states.insert(new_start);
     states.insert(new_end);
     states.insert(nfa2.states.begin(), nfa2.states.end());
-    merge_transitions(nfa2.transitions);
+    MergeTransitions(nfa2.transitions);
 
-    add_transition(new_start, "e", nfa2.start_state);
-    add_transition(new_start, "e", start_state);
-    add_transition(nfa2.end_state, "e", new_end);
-    add_transition(end_state, "e", new_end);
+    AddTransition(new_start, "e", nfa2.start_state);
+    AddTransition(new_start, "e", start_state);
+    AddTransition(*nfa2.end_states.begin(), "e", new_end);
+    AddTransition(*end_states.begin(), "e", new_end);
 
     start_state = new_start;
-    end_state = new_end;
+    end_states = {new_end};
 }
 
 void NFA::Concat(const NFA& nfa2) {
     states.insert(nfa2.states.begin(), nfa2.states.end());
-    merge_transitions(nfa2.transitions);
+    MergeTransitions(nfa2.transitions);
 
-    add_transition(end_state, "e", nfa2.start_state);
-    end_state = nfa2.end_state;
+    AddTransition(*end_states.begin(), "e", nfa2.start_state);
+    end_states = {*nfa2.end_states.begin()};
 }
 
 void NFA::Kleene(const std::string& new_start, const std::string& new_end) {
     states.insert(new_start);
     states.insert(new_end);
 
-    add_transition(new_start, "e", new_end);
-    add_transition(new_start, "e", start_state);
-    add_transition(end_state, "e", start_state);
-    add_transition(end_state, "e", new_end);
+    AddTransition(new_start, "e", new_end);
+    AddTransition(new_start, "e", start_state);
+    AddTransition(*end_states.begin(), "e", start_state);
+    AddTransition(*end_states.begin(), "e", new_end);
 
     start_state = new_start;
-    end_state = new_end;
+    end_states = {new_end};
 }
 
 std::string NFA::ToDot() {
@@ -68,7 +69,7 @@ std::string NFA::ToDot() {
                         "  rankdir=LR;\n"
                         "  node [shape = circle];\n"};
     for (auto state : states) {
-        if (state == end_state) {
+        if (state == *end_states.begin()) {
             result += "  " + state + "[shape=doublecircle];\n";
         } else {
             result += "  " + state + ";\n";
@@ -132,7 +133,7 @@ NFA PolishToThompson(const std::string& tokens) {
 
 
 
-std::set<std::string> epsilon_closure(const NFA& nfa, const std::set<std::string>& states) {
+std::set<std::string> EpsilonClosure(const NFA& nfa, const std::set<std::string>& states) {
     std::set<std::string> closure = states;
     std::stack<std::string> stack{};
     for (const auto& state : states) {
@@ -172,4 +173,21 @@ std::set<std::string> move(NFA& nfa, std::set<std::string>& states, std::string 
         }
     }
     return achievable;
+}
+
+bool NFA::IsInLanguage(const std::string &word) {
+    std::set<std::string> curr_states {start_state};
+    curr_states = EpsilonClosure(*this, curr_states);
+    for (char ch : word) {
+        std::string sch(1, ch);
+        std::set<std::string> next_states = move(*this, curr_states, sch);
+        curr_states = EpsilonClosure(*this, next_states);
+        if (curr_states.empty()) {
+            return false;
+        }
+    }
+    return std::any_of(curr_states.begin(), curr_states.end(),
+                       [this](const std::string& state) {
+                           return end_states.count(state);
+                       });
 }
