@@ -1,56 +1,38 @@
-digraph NFA {
-  rankdir=LR;
-
-  node [shape = circle];
-
-  node [shape = point]; start;
-  node [shape = circle];
-
-  node [shape = doublecircle]; q3 q14; 4; 7
-  node [shape = circle];
-  
-  // abc
-  q0 -> q1 [label="a"];
-  q1 -> q2 [label="b"];
-  q2 -> q3 [label="c"];
-
-
-
-  // ((a|b|c)*ab(a|b|c)*bc(a|b|c)*)
-  q0 -> q10 [label="ε"];
-  q10 -> q10 [label="a,b,c"];
-  q10 -> q11 [label="a"];
-  q11 -> q12 [label="b"];
-  q12 -> q12 [label="a,b,c"];
-  q12 -> q13 [label="b"];
-  q13 -> q14 [label="c"];
-  q14 -> q14 [label="a,b,c"];
-
- // (?=.*bc.*ab)
-  node [shape = box]; "&"; 
-  node [shape = circle];
-
-  q0 -> "&" [label="ε"]
-  "&" -> 0 [label="ε"]
-  0 -> 0 [label="a,b,c"]
-  0 -> 1 [label="b"]
-  1 -> 2 [label="c"]
-  2 -> 2 [label="a,b,c"]
-  2 -> 3 [label="a"]
-  3 -> 4 [label="b"]
-
-  //(.*ab(a|bc|cc|bb)*)
-  "&" -> 5 [label="ε"]
-  5 -> 5 [label="a,b,c"]
-  5 -> 6 [label="a"]
-  6 -> 7 [label="b"]
-  7 -> 7 [label="a"];
-  7 -> 8 [label="b"];
-  8 -> 7 [label="b"];
-  8 -> 7 [label="c"];
-  7 -> 9 [label="c"];
-  9 -> 7 [label="c"];
+digraph AFA {
+rankdir=LR;
+node [shape = point]; start;
+node [shape = doublecircle]; 3 8 14 17;
+node [shape = box]; "&(9)";
+node [shape = circle];
+start -> 0;
+0 -> 1 [label="a"];
+1 -> 2 [label="b"];
+2 -> 3 [label="c"];
+0 -> 4 [label="ε"];
+4 -> 4 [label="a,b,c"];
+4 -> 5 [label="a"];
+5 -> 6 [label="b"];
+6 -> 6 [label="a,b,c"];
+6 -> 7 [label="b"];
+7 -> 8 [label="c"];
+8 -> 8 [label="a,b,c"];
+0 -> "&(9)" [label="ε"];
+"&(9)" -> 10 [label="ε"];
+10 -> 10 [label="a,b,c"];
+10 -> 11 [label="b"];
+11 -> 12 [label="c"];
+12 -> 12 [label="a,b,c"];
+12 -> 13 [label="a"];
+13 -> 14 [label="b"];
+14 -> 14 [label="a,b,c"];
+"&(9)" -> 15 [label="ε"];
+15 -> 15 [label="a,b,c"];
+15 -> 16 [label="a"];
+16 -> 17 [label="b"];
+17 -> 17 [label="a"];
+17 -> 18 [label="b"];
+18 -> 17 [label="b"];
+18 -> 17 [label="c"];
+17 -> 19 [label="c"];
+19 -> 17 [label="c"];
 }
-
-
-
