@@ -163,7 +163,7 @@ std::set<std::string> EpsilonClosure(const NFA& nfa, const std::set<std::string>
     return closure;
 }
 
-std::set<std::string> move(NFA& nfa, std::set<std::string>& states, std::string symbol) {
+std::set<std::string> Move(NFA& nfa, std::set<std::string>& states, std::string symbol) {
     std::set<std::string> achievable;
     for (const auto& state : states) {
         if (nfa.transitions.count(state) && nfa.transitions.at(state).count(symbol)) {
@@ -180,7 +180,7 @@ bool NFA::IsInLanguage(const std::string &word) {
     curr_states = EpsilonClosure(*this, curr_states);
     for (char ch : word) {
         std::string sch(1, ch);
-        std::set<std::string> next_states = move(*this, curr_states, sch);
+        std::set<std::string> next_states = Move(*this, curr_states, sch);
         curr_states = EpsilonClosure(*this, next_states);
         if (curr_states.empty()) {
             return false;
