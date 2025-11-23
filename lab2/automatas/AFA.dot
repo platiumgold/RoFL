@@ -6,7 +6,7 @@ digraph NFA {
   node [shape = point]; start;
   node [shape = circle];
 
-  node [shape = doublecircle]; q3 q7 q14;
+  node [shape = doublecircle]; q3 q14; 4; 7
   node [shape = circle];
   
   // abc
@@ -14,18 +14,7 @@ digraph NFA {
   q1 -> q2 [label="b"];
   q2 -> q3 [label="c"];
 
-  // ((a|b|c)*bc(a|b|c)*ab(a|bc|cc|bb)*)
-  q10 -> q4 [label="b"];
-  q4 -> q5 [label="c"];
-  q5 -> q5 [label="a,b,c"];
-  q5 -> q6 [label="a"];
-  q6 -> q7 [label="b"];
-  q7 -> q7 [label="a"];
-  q7 -> q8 [label="b"];
-  q8 -> q7 [label="b"];
-  q8 -> q7 [label="c"];
-  q7 -> q9 [label="c"];
-  q9 -> q7 [label="c"];
+
 
   // ((a|b|c)*ab(a|b|c)*bc(a|b|c)*)
   q0 -> q10 [label="ε"];
@@ -37,33 +26,30 @@ digraph NFA {
   q13 -> q14 [label="c"];
   q14 -> q14 [label="a,b,c"];
 
-
-  //мини автоматики
-
-  node [shape = doublecircle];  p2_2; p1_2;
-
-  node [shape = circle];
-  // подстрока ab
-  p1_0 -> p1_0 [label= "b,c"];
-  p1_0 -> p1_1 [label = "a"];
-  p1_1 -> p1_2 [label="b"]
-  p1_1 -> p1_0 [label="c"]
-  p1_1 -> p1_1 [label = "a"]
-  p1_2 -> p1_2 [label = "a,b,c"]
-
-  // подстрока bc
-  p2_0 -> p2_0 [label= "a,c"];
-  p2_0 -> p2_1 [label = "b"];
-  p2_1 -> p2_2 [label="c"]
-  p2_1 -> p2_0 [label="a"]
-  p2_1 -> p2_1 [label = "b"]
-  p2_2 -> p2_2 [label = "a,b,c"]
-
-  // объединяем
+ // (?=.*bc.*ab)
   node [shape = box]; "&"; 
-  "&" -> p1_0 [label="ε"];
-  "&" -> p2_0 [label="ε"];
-  "&" -> q0 [label="ε"];
+  node [shape = circle];
+
+  q0 -> "&" [label="ε"]
+  "&" -> 0 [label="ε"]
+  0 -> 0 [label="a,b,c"]
+  0 -> 1 [label="b"]
+  1 -> 2 [label="c"]
+  2 -> 2 [label="a,b,c"]
+  2 -> 3 [label="a"]
+  3 -> 4 [label="b"]
+
+  //(.*ab(a|bc|cc|bb)*)
+  "&" -> 5 [label="ε"]
+  5 -> 5 [label="a,b,c"]
+  5 -> 6 [label="a"]
+  6 -> 7 [label="b"]
+  7 -> 7 [label="a"];
+  7 -> 8 [label="b"];
+  8 -> 7 [label="b"];
+  8 -> 7 [label="c"];
+  7 -> 9 [label="c"];
+  9 -> 7 [label="c"];
 }
 
 
