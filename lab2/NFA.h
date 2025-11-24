@@ -32,6 +32,6 @@ public:
 NFA PolishToThompson(const std::string& tokens);
 
 std::set<std::string> EpsilonClosure(const NFA& nfa, const std::set<std::string>& states);
-std::set<std::string> Move(NFA& nfa, std::set<std::string>& states, std::string symbol);
+std::set<std::string> Move(const NFA& nfa, const std::set<std::string>& states, std::string symbol);
 
 #endif //ROFL_NFA_H

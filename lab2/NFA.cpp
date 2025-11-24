@@ -69,7 +69,7 @@ std::string NFA::ToDot() {
                         "  rankdir=LR;\n"
                         "  node [shape = circle];\n"};
     for (auto state : states) {
-        if (state == *end_states.begin()) {
+        if (end_states.count(state)) {
             result += "  " + state + "[shape=doublecircle];\n";
         } else {
             result += "  " + state + ";\n";
@@ -163,7 +163,7 @@ std::set<std::string> EpsilonClosure(const NFA& nfa, const std::set<std::string>
     return closure;
 }
 
-std::set<std::string> Move(NFA& nfa, std::set<std::string>& states, std::string symbol) {
+std::set<std::string> Move(const NFA& nfa, const std::set<std::string>& states, std::string symbol) {
     std::set<std::string> achievable;
     for (const auto& state : states) {
         if (nfa.transitions.count(state) && nfa.transitions.at(state).count(symbol)) {
