@@ -15,6 +15,8 @@
 
 \usepackage{xcolor}
 
+\usepackage{csvsimple}
+
 \title{lab2 Амбросий Николай Евгеньевич ИУ9-51Б}
 \author{}
 \date{}
@@ -68,6 +70,9 @@
 		\includegraphics[width=0.8\textwidth]{automatas/min_DFA.png} 
 	\end{figure}
 	
+
+	\csvautotabular{automatas/min_table.csv}
+
 	
 	\section{малый НКА}
 	Упростим исходное регулярное выражение.
@@ -84,12 +89,15 @@
 		\includegraphics[width=0.8\textwidth]{automatas/mini_nfa.png} 
 		\label{fig:rel_diagram}
 	\end{figure}
-
+	Получилось выделить 7 различных КЭ. последний суффикс abbc никаким префиксом из языка не вывести и минус на нем не получить. Итак, в минимальном НКА как минимум 7 состояний
+	
+	
+	\csvautotabular{automatas/nfa_table.csv}
 	
 	\section{Расширенные регулярные выражения}
 	Вынесем проверку алфавита $\{a, b, c\}$ в lookahead. Тогда конструкции $(a|b|c)^*$ можно заменить на $.^*$ .
 	
-	$ ^(?=[abc]^*\$)((.^*ab.^*bc.^*)|(.^*bc.^*ab(a|bc|cc|bb)^*)|abc)\$ $
+	$ \textasciicircum (?=[abc]^*\$)(.^*ab.^*bc.^*|.^*bc.^*ab(a|bc|cc|bb)^*|abc)\$ $
 	\section{Построение ПКА}
 	
 	Наш язык L представляет собой объединение трех языков: $L = L_1 \cup L_2 \cup L_3$.
@@ -110,5 +118,8 @@
 		\centering
 		\includegraphics[width=0.8\textwidth]{automatas/funny_AFA.png} 
 	\end{figure}
+	Нижняя оценка числа состояний ПКА - 3.
+	
+	\csvautotabular{automatas/afa_table.csv}
 	
 \end{document}
