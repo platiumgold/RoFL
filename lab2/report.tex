@@ -26,7 +26,6 @@
 	\maketitle
 	
 	\section{минимальный ДКА}
-	
 	Имеем регулярное выражение:
 	
 	$$ ((a^*b^*c^*)^*ab(a^*b^*c^*)^*bc(a|b|c)^*)\mid((a|b|c)^*bc(a^*b^*c^*)^*ab(a|bc|cc|bb)^*)\mid abc $$
@@ -45,16 +44,12 @@
 	
 		$ a*b*.c*.*a.b.a*b*.c*.*.b.c.ab|c|*.ab|c|*b.c.a*b*.c*.*.a.b.abc.|cc.|bb.|*.|ab.c.| $
 	
-	\section{Построение НКА (Алгоритм Томпсона)}
-	
 	Применим метод Томпсона к обратной польской записи и НКА.
 	
 	\begin{figure}[H]
 		\centering
 		\includegraphics[width=0.8\textwidth]{automatas/Thompson.png} 
 	\end{figure}
-	
-	\section{Детерминизация и минимизация}
 	
 	Выполним детерминизацию полученного НКА
 	
@@ -98,7 +93,7 @@
 	Вынесем проверку алфавита $\{a, b, c\}$ в lookahead. Тогда конструкции $(a|b|c)^*$ можно заменить на $.^*$ .
 	
 	$ \textasciicircum (?=[abc]^*\$)(.^*ab.^*bc.^*|.^*bc.^*ab(a|bc|cc|bb)^*|abc)\$ $
-	\section{Построение ПКА}
+	\section{ПКА}
 	
 	Наш язык L представляет собой объединение трех языков: $L = L_1 \cup L_2 \cup L_3$.
 	
@@ -114,7 +109,7 @@
 		\item Поток 2: Проверяет, является ли текущая последовательность допустимым подсловом (bc или bb) в контексте суффикса.
 	\end{enumerate}
 	
-	\begin{figure}[h!]
+	\begin{figure}[H]
 		\centering
 		\includegraphics[width=0.8\textwidth]{automatas/funny_AFA.png} 
 	\end{figure}
