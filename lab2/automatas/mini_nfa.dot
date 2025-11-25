@@ -6,34 +6,34 @@ digraph NFA {
   node [shape = point]; start;
   node [shape = circle];
 
-  node [shape = doublecircle]; q3 q7 q14;
+  node [shape = doublecircle]; 3 7 14;
   node [shape = circle];
   
   // abc
-  q0 -> q1 [label="a"];
-  q1 -> q2 [label="b"];
-  q2 -> q3 [label="c"];
+  0 -> 1 [label="a"];
+  1 -> 2 [label="b"];
+  2 -> 3 [label="c"];
 
   // ((a|b|c)*bc(a|b|c)*ab(a|bc|cc|bb)*)
-  q10 -> q4 [label="b"];
-  q4 -> q5 [label="c"];
-  q5 -> q5 [label="a,b,c"];
-  q5 -> q6 [label="a"];
-  q6 -> q7 [label="b"];
-  q7 -> q7 [label="a"];
-  q7 -> q8 [label="b"];
-  q8 -> q7 [label="b"];
-  q8 -> q7 [label="c"];
-  q7 -> q9 [label="c"];
-  q9 -> q7 [label="c"];
+  10 -> 4 [label="b"];
+  4 -> 5 [label="c"];
+  5 -> 5 [label="a,b,c"];
+  5 -> 6 [label="a"];
+  6 -> 7 [label="b"];
+  7 -> 7 [label="a"];
+  7 -> 8 [label="b"];
+  8 -> 7 [label="b"];
+  8 -> 7 [label="c"];
+  7 -> 9 [label="c"];
+  9 -> 7 [label="c"];
 
   // ((a|b|c)*ab(a|b|c)*bc(a|b|c)*)
-  q0 -> q10 [label="ε"];
-  q10 -> q10 [label="a,b,c"];
-  q10 -> q11 [label="a"];
-  q11 -> q12 [label="b"];
-  q12 -> q12 [label="a,b,c"];
-  q12 -> q13 [label="b"];
-  q13 -> q14 [label="c"];
-  q14 -> q14 [label="a,b,c"];
+  0 -> 10 [label="ε"];
+  10 -> 10 [label="a,b,c"];
+  10 -> 11 [label="a"];
+  11 -> 12 [label="b"];
+  12 -> 12 [label="a,b,c"];
+  12 -> 13 [label="b"];
+  13 -> 14 [label="c"];
+  14 -> 14 [label="a,b,c"];
 }
