@@ -33,18 +33,14 @@
 	
 	Преобразуем его в вид, удобный для парсинга. Явно обозначим конкатенацию символом «$\cdot$»:
 	$$
-		\begin{aligned}
-			((a^*\cdot b^*\cdot c^*)^* \cdot a \cdot b \cdot (a^*\cdot b^*\cdot c^*)^* \cdot b \cdot c \cdot (a|b|c)^*) \mid \\
-			((a|b|c)^* \cdot b \cdot c \cdot (a^*\cdot b^*\cdot c^*)^* \cdot a \cdot b \cdot (a|b \cdot c|c \cdot c|b \cdot b)^*) \mid \\
-			a \cdot b \cdot c
-		\end{aligned}
+	\begin{aligned}
+		((a^*\cdot b^*\cdot c^*)^* \cdot a \cdot b \cdot (a^*\cdot b^*\cdot c^*)^* \cdot b \cdot c \cdot (a|b|c)^*) \mid \\
+		((a|b|c)^* \cdot b \cdot c \cdot (a^*\cdot b^*\cdot c^*)^* \cdot a \cdot b \cdot (a|b \cdot c|c \cdot c|b \cdot b)^*) \mid \\
+		a \cdot b \cdot c
+	\end{aligned}
 	$$
 	
-	Преобразуем полученное выражение в Обратную Польскую Нотацию:
-	
-		$ a*b*.c*.*a.b.a*b*.c*.*.b.c.ab|c|*.ab|c|*b.c.a*b*.c*.*.a.b.abc.|cc.|bb.|*.|ab.c.| $
-	
-	Применим метод Томпсона к обратной польской записи и НКА.
+	С помощью метода Томпсона построим НКА.
 	
 	\begin{figure}[H]
 		\centering
@@ -65,9 +61,9 @@
 		\includegraphics[width=0.8\textwidth]{automatas/min_DFA.png} 
 	\end{figure}
 	
-
+	
 	\csvautotabular{automatas/min_table.csv}
-
+	
 	
 	\section{малый НКА}
 	Упростим исходное регулярное выражение.
