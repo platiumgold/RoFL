@@ -1,0 +1,39 @@
+digraph NFA {
+  rankdir=LR;
+
+  node [shape = circle];
+
+  node [shape = point]; start;
+  node [shape = circle];
+
+  node [shape = doublecircle]; 3 7 14;
+  node [shape = circle];
+  
+  // abc
+  0 -> 1 [label="a"];
+  1 -> 2 [label="b"];
+  2 -> 3 [label="c"];
+
+  // ((a|b|c)*bc(a|b|c)*ab(a|bc|cc|bb)*)
+  10 -> 4 [label="b"];
+  4 -> 5 [label="c"];
+  5 -> 5 [label="a,b,c"];
+  5 -> 6 [label="a"];
+  6 -> 7 [label="b"];
+  7 -> 7 [label="a"];
+  7 -> 8 [label="b"];
+  8 -> 7 [label="b"];
+  8 -> 7 [label="c"];
+  7 -> 9 [label="c"];
+  9 -> 7 [label="c"];
+
+  // ((a|b|c)*ab(a|b|c)*bc(a|b|c)*)
+  0 -> 10 [label="ε"];
+  10 -> 10 [label="a,b,c"];
+  10 -> 11 [label="a"];
+  11 -> 12 [label="b"];
+  12 -> 12 [label="a,b,c"];
+  12 -> 13 [label="b"];
+  13 -> 14 [label="c"];
+  14 -> 14 [label="a,b,c"];
+}
